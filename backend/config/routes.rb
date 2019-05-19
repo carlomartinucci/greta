@@ -1,7 +1,5 @@
 Rails.application.routes.draw do
-  resources :ingredients
-  resources :goods
-  # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
+  post '/graphql', to: 'graphql#execute'
 
   resources :recipes
   resources :goods
