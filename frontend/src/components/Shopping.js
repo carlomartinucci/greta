@@ -119,7 +119,7 @@ const Shopping = props => {
 
       <h3>Menu</h3>
       <p>TODO: sort</p>
-      {Object.entries(menuState).map(([date, { breakfast, lunch, dinner }]) => (
+      {menuState && Object.entries(menuState).map(([date, { breakfast, lunch, dinner }]) => (
         <div key={date}>
           <h4>{formatDate(date)}</h4>
           <p className="mb-0">
