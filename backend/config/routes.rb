@@ -1,6 +1,10 @@
 Rails.application.routes.draw do
   resources :shoppings
-  resources :menu_goods
+  resources :shopping_lists, only: [:index, :create] do
+    collection do
+      get :current
+    end
+  end
   resources :menus
   post '/graphql', to: 'graphql#execute'
 

@@ -1,3 +1,4 @@
+import normalize from "json-api-normalizer";
 import usePostDataApi from "./usePostDataApi";
 import build from "../utils/build";
 import endpoint from "../utils/endpoint";
@@ -6,7 +7,7 @@ const usePostShopping = () => {
   const [{ isPosting, isError, data }, post] = usePostDataApi(
     endpoint("shoppings")
   );
-  const shopping = (data ? build(data, "shopping") : [{}])[0];
+  const shopping = (data ? build(normalize(data), "shopping") : [{}])[0];
   const error = isError ? "Could not post shopping" : null;
   const postShopping = shoppingState => {
     const params = paramsFromShoppingState(shoppingState)

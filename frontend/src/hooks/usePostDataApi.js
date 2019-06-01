@@ -1,10 +1,9 @@
 import { useReducer, useEffect } from "react";
 import axios from "axios";
-import normalize from "json-api-normalizer";
 
 // $.get(`/cards`).then(normalize).then((response) => build(response, 'card'))
 
-const dataFetchReducer = (state, action) => {
+const dataPostReducer = (state, action) => {
   switch (action.type) {
     case "POST_INIT":
       return {
@@ -18,7 +17,7 @@ const dataFetchReducer = (state, action) => {
         ...state,
         isPosting: false,
         isError: false,
-        data: normalize(action.payload)
+        data: action.payload
       };
     case "POST_FAILURE":
       return {
@@ -32,7 +31,7 @@ const dataFetchReducer = (state, action) => {
 };
 
 const usePostDataApi = url => {
-  const [state, dispatch] = useReducer(dataFetchReducer, {
+  const [state, dispatch] = useReducer(dataPostReducer, {
     params: null,
     isPosting: false,
     isError: false,

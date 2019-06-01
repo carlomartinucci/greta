@@ -1,6 +1,5 @@
 import { useState, useReducer, useEffect } from "react";
 import axios from "axios";
-import normalize from "json-api-normalizer";
 
 // $.get(`/cards`).then(normalize).then((response) => build(response, 'card'))
 
@@ -17,7 +16,7 @@ const dataFetchReducer = (state, action) => {
         ...state,
         isLoading: false,
         isError: false,
-        data: normalize(action.payload)
+        data: action.payload
       };
     case "FETCH_FAILURE":
       return {

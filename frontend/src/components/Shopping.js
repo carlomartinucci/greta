@@ -3,7 +3,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import itLocale from "@fullcalendar/core/locales/it";
 import interactionPlugin from "@fullcalendar/interaction";
-import { Container, FormGroup, Label, Button } from "reactstrap";
+import { Container, FormGroup, Label, Badge, Button, Row, Col } from "reactstrap";
 import GenericModal from "./GenericModal";
 // import useShopping from "../hooks/useShopping";
 import useGoods from "../hooks/useGoods";
@@ -14,13 +14,13 @@ import calendarTitleFromMenu from "../utils/calendarTitleFromMenu";
 import "../styles/calendar.scss";
 import { formatDate } from "../utils/dayjs";
 import Autocomplete from "./Autocomplete";
-import { ApolloConsumer } from "react-apollo";
 
 import modalReducer, {
   modalEmptyState,
   MODAL_OPEN,
   MODAL_CLOSE,
-  MODAL_UPDATE
+  MODAL_UPDATE,
+  MODAL_CHANGE_QUANTITY
 } from "../reducers/modal.js";
 import menuReducer, {
   menuEmptyState,
@@ -71,55 +71,6 @@ const Shopping = props => {
     updateCalendar(modalState.date, calendarTitleFromMenu(modalState.menu));
     const menuPayload = { date: modalState.date, menu: modalState.menu };
     menuDispatch({ type: MENU_UPDATE, payload: menuPayload });
-    modalDispatch({ type: MODAL_CLOSE });
-  };
-
-  const handleBreakfast = breakfast =>
-    modalDispatch({
-      type: MODAL_UPDATE,
-      payload: {
-        menuType: "breakfast",
-        menu: breakfast
-      }
-    });
-  const breakfastProps = autocompleteProps(
-    options,
-    setClientOptions,
-    modalState.menu && modalState.menu.breakfast,
-    handleBreakfast
-  );
-
-  const handleLunch = lunch =>
-    modalDispatch({
-      type: MODAL_UPDATE,
-      payload: {
-        menuType: "lunch",
-        menu: lunch
-      }
-    });
-  const lunchProps = autocompleteProps(
-    options,
-    setClientOptions,
-    modalState.menu && modalState.menu.lunch,
-    handleLunch
-  );
-
-  const handleDinner = dinner =>
-    modalDispatch({
-      type: MODAL_UPDATE,
-      payload: {
-        menuType: "dinner",
-        menu: dinner
-      }
-    });
-  const dinnerProps = autocompleteProps(
-    options,
-    setClientOptions,
-    modalState.menu && modalState.menu.dinner,
-    handleDinner
-  );
-
-  const handleModalToggle = event => {
     modalDispatch({ type: MODAL_CLOSE });
   };
 
@@ -183,10 +134,71 @@ const Shopping = props => {
         </div>
       ))}
 
-      <h3>Lista</h3>
-      <p>TODO</p>
+      <ShoppingModal
+        modalDispatch={modalDispatch}
+        options={options}
+        setClientOptions={setClientOptions}
+        modalState={modalState}
+        handleModalSubmit={handleModalSubmit}
+        />
+    </Container>
+  );
+};
 
-      <GenericModal
+const ShoppingModal = props => {
+  const {modalDispatch, options, setClientOptions, modalState, handleModalSubmit} = props
+  const handleModalToggle = event => {
+    modalDispatch({ type: MODAL_CLOSE });
+  };
+  const handleChangeQuantity = (menuType, value, deltaQuantity) => event => {
+    modalDispatch({type: MODAL_CHANGE_QUANTITY, payload: {menuType, value, deltaQuantity}})
+  }
+  const handleBreakfast = breakfast =>
+    modalDispatch({
+      type: MODAL_UPDATE,
+      payload: {
+        menuType: "breakfast",
+        menu: breakfast
+      }
+    });
+  const breakfastProps = autocompleteProps(
+    options,
+    setClientOptions,
+    modalState.menu && modalState.menu.breakfast,
+    handleBreakfast
+  );
+
+  const handleLunch = lunch =>
+    modalDispatch({
+      type: MODAL_UPDATE,
+      payload: {
+        menuType: "lunch",
+        menu: lunch
+      }
+    });
+  const lunchProps = autocompleteProps(
+    options,
+    setClientOptions,
+    modalState.menu && modalState.menu.lunch,
+    handleLunch
+  );
+
+  const handleDinner = dinner =>
+    modalDispatch({
+      type: MODAL_UPDATE,
+      payload: {
+        menuType: "dinner",
+        menu: dinner
+      }
+    });
+  const dinnerProps = autocompleteProps(
+    options,
+    setClientOptions,
+    modalState.menu && modalState.menu.dinner,
+    handleDinner
+  );
+
+  return       <GenericModal
         key={modalState.date}
         isOpen={modalState.isOpen}
         toggle={handleModalToggle}
@@ -205,10 +217,25 @@ const Shopping = props => {
           <Label for="cena">Cena</Label>
           <Autocomplete name="cena" {...dinnerProps} />
         </FormGroup>
+
+        <Row>
+          <Col>
+            {Object.entries(modalState.menu).map(([menuType, values]) => (
+              <p key={menuType} className="mb-0">
+                {menuType}: {values.map(value => (
+                  <span>
+                    <Button outline size="sm" onClick={handleChangeQuantity(menuType, value, -1)}>-1</Button>
+                      {value.label} <Badge pill>{value.quantity || 0}</Badge>
+                    <Button outline size="sm" onClick={handleChangeQuantity(menuType, value, +1)}>+1</Button>
+                      </span>
+                      ))}
+              </p>
+            ))}
+
+          </Col>
+        </Row>
       </GenericModal>
-    </Container>
-  );
-};
+}
 
 const autocompleteProps = (options, setClientOptions, value, setValue) => {
   const handleCreate = label => {

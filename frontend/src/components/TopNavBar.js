@@ -7,11 +7,7 @@ import {
   NavbarBrand,
   Nav,
   NavItem,
-  NavLink,
-  UncontrolledDropdown,
-  DropdownToggle,
-  DropdownMenu,
-  DropdownItem
+  NavLink
 } from "reactstrap";
 
 import useToggleState from "../hooks/useToggleState";
@@ -30,13 +26,19 @@ const TopNavBar = props => {
           <Nav className="ml-auto" navbar>
             <NavItem>
               <NavLink tag={Link} to="/calendar" onClick={toggleIsOpen}>
-                Calendar
+                Menu di oggi
               </NavLink>
             </NavItem>
 
             <NavItem>
               <NavLink tag={Link} to="/shopping" onClick={toggleIsOpen}>
-                Shopping
+                Fai la spesa
+              </NavLink>
+            </NavItem>
+
+            <NavItem>
+              <NavLink tag={Link} to="/shopping-list" onClick={toggleIsOpen}>
+                Lista della spesa
               </NavLink>
             </NavItem>
 

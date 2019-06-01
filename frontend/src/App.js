@@ -12,7 +12,7 @@ const Calendar = lazy(() => import("./components/Calendar"));
 const Shopping = lazy(() => import("./components/Shopping"));
 
 // la tua lista della spesa
-// TODO
+const ShoppingList = lazy(() => import("./pages/ShoppingList"));
 
 // backoffice con i crud
 const Backoffice = lazy(() => import("./components/Backoffice"));
@@ -26,6 +26,7 @@ const App = () => (
           <Route exact path="/" render={() => <Redirect to="/calendar" />} />
           <Route exact path="/calendar" component={Calendar} />
           <Route exact path="/shopping" component={Shopping} />
+          <Route exact path="/shopping-list" component={ShoppingList} />
           <Route path="/backoffice" component={Backoffice} />
         </Switch>
       </Suspense>

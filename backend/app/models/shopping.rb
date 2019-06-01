@@ -24,4 +24,8 @@ class Shopping < ApplicationRecord
     shoppings = current_scope.includes(options[:include])
     ShoppingSerializer.new(shoppings, options).serialized_json
   end
+
+  def self.menu_goods
+    MenuGood.where(menu_id: current_scope.includes(:menus).map(&:menu_ids).flatten)
+  end
 end
