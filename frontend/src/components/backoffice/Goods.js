@@ -1,6 +1,6 @@
 import React from "react";
-import useGoods from "../hooks/useGoods";
-import Loading from "./Loading";
+import useGoods from "../../hooks/useGoods";
+import Loading from "../Loading";
 
 const Goods = props => {
   const [isLoading, error, goods] = useGoods();

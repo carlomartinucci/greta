@@ -39,6 +39,12 @@ const TopNavBar = props => {
                 Shopping
               </NavLink>
             </NavItem>
+
+            <NavItem>
+              <NavLink tag={Link} to="/backoffice" onClick={toggleIsOpen}>
+                Backoffice
+              </NavLink>
+            </NavItem>
           </Nav>
         </Collapse>
       </Navbar>
