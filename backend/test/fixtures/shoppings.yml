@@ -1,0 +1,17 @@
+# == Schema Information
+#
+# Table name: shoppings
+#
+#  id           :bigint(8)        not null, primary key
+#  purchased_at :datetime
+#  created_at   :datetime         not null
+#  updated_at   :datetime         not null
+#
+
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  purchased_at: 2019-05-29 23:31:26
+
+two:
+  purchased_at: 2019-05-29 23:31:26

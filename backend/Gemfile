@@ -11,8 +11,8 @@ gem 'pg', '>= 0.18', '< 2.0'
 gem 'puma', '~> 3.11'
 # https://github.com/Netflix/fast_jsonapi
 gem 'fast_jsonapi'
-# https://github.com/rmosolgo/graphql-ruby
-gem 'graphql'
+# # https://github.com/rmosolgo/graphql-ruby
+# gem 'graphql'
 
 # Use Redis adapter to run Action Cable in production
 # gem 'redis', '~> 4.0'

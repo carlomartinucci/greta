@@ -1,38 +1,20 @@
-import React from 'react';
-import gql from 'graphql-tag';
-import { Query } from 'react-apollo';
+import React from "react";
+import useGoods from "../hooks/useGoods";
+import Loading from "./Loading";
 
-import Loading from './Loading'
+const Goods = props => {
+  const [isLoading, error, goods] = useGoods();
 
-const GET_GOODS = gql`
-query goods {
-  goods {
-    id
-    name
-    shelf
-  }
-}
-`
+  if (isLoading) return <Loading />;
+  if (error) return <p>ERROR {error}</p>;
 
-const Goods = props => (
-  <Query query={GET_GOODS}>
-    {({ data, loading, error }) => {
-      if (loading) return <Loading />;
-      if (error) return <p>ERROR {error.toString()}</p>;
-
-      return (
-        <React.Fragment>
-      {data.goods &&
-        data.goods.map(good => (
-          <p key={good.id}>
-            {good.name}
-          </p>
-        ))
-      }
-      </React.Fragment>
-      );
-    }}
-  </Query>
-)
+  return (
+    <React.Fragment>
+      {goods.map(good => (
+        <p key={good.id}>{good.name}</p>
+      ))}
+    </React.Fragment>
+  );
+};
 
 export default Goods;

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_05_08_201214) do
+ActiveRecord::Schema.define(version: 2019_05_29_213247) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -33,6 +33,25 @@ ActiveRecord::Schema.define(version: 2019_05_08_201214) do
     t.index ["recipe_id"], name: "index_ingredients_on_recipe_id"
   end
 
+  create_table "menu_goods", force: :cascade do |t|
+    t.bigint "good_id"
+    t.bigint "menu_id"
+    t.integer "quantity"
+    t.integer "course"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["good_id"], name: "index_menu_goods_on_good_id"
+    t.index ["menu_id"], name: "index_menu_goods_on_menu_id"
+  end
+
+  create_table "menus", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "shopping_id"
+    t.datetime "eat_at"
+    t.index ["shopping_id"], name: "index_menus_on_shopping_id"
+  end
+
   create_table "recipes", force: :cascade do |t|
     t.string "name"
     t.integer "season"
@@ -41,6 +60,15 @@ ActiveRecord::Schema.define(version: 2019_05_08_201214) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "shoppings", force: :cascade do |t|
+    t.datetime "purchased_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   add_foreign_key "ingredients", "goods"
   add_foreign_key "ingredients", "recipes"
+  add_foreign_key "menu_goods", "goods"
+  add_foreign_key "menu_goods", "menus"
+  add_foreign_key "menus", "shoppings"
 end

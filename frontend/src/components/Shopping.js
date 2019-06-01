@@ -1,18 +1,32 @@
-import React, { useState, useRef } from "react";
+import React, { useReducer, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import itLocale from "@fullcalendar/core/locales/it";
 import interactionPlugin from "@fullcalendar/interaction";
-import { Container, FormGroup, Label, Row, Col } from "reactstrap";
+import { Container, FormGroup, Label, Button } from "reactstrap";
 import GenericModal from "./GenericModal";
-import useToggleState from "../hooks/useToggleState";
-import useAutocomplete from "../hooks/useAutocomplete";
 // import useShopping from "../hooks/useShopping";
-import useLoadShoppingOptions from "../hooks/useLoadShoppingOptions";
+import useGoods from "../hooks/useGoods";
+import usePostShopping from "../hooks/usePostShopping";
+import useCalendar from "../hooks/useCalendar";
+import useMenuStateFromLocalforage from "../hooks/useMenuStateFromLocalforage";
+import calendarTitleFromMenu from "../utils/calendarTitleFromMenu";
 import "../styles/calendar.scss";
 import { formatDate } from "../utils/dayjs";
 import Autocomplete from "./Autocomplete";
 import { ApolloConsumer } from "react-apollo";
+
+import modalReducer, {
+  modalEmptyState,
+  MODAL_OPEN,
+  MODAL_CLOSE,
+  MODAL_UPDATE
+} from "../reducers/modal.js";
+import menuReducer, {
+  menuEmptyState,
+  MENU_UPDATE,
+  MENU_RESET
+} from "../reducers/menu.js";
 
 const header = {
   left: "title",
@@ -21,62 +35,100 @@ const header = {
 };
 const plugins = [dayGridPlugin, interactionPlugin];
 
+const useShoppingOptions = () => {
+  const [, , serverGoods] = useGoods();
+  const [clientOptions, setClientOptions] = useState([]);
+  const options = serverGoods
+    .map(good => ({ value: good.name, label: good.name }))
+    .concat(clientOptions);
+  return [setClientOptions, options];
+};
+
 const Shopping = props => {
-  const calendarRef = useRef(null);
+  const [calendarRef, updateCalendar] = useCalendar();
+
+  const [setClientOptions, options] = useShoppingOptions();
+
+  const [modalState, modalDispatch] = useReducer(modalReducer, modalEmptyState);
+  const [menuState, menuDispatch] = useReducer(menuReducer, menuEmptyState);
+  useMenuStateFromLocalforage({
+    calendarRef,
+    menuDispatch,
+    updateCalendar,
+    menuState
+  });
+
+  const [
+    isPostingShopping,
+    errorShopping,
+    shopping,
+    postShopping
+  ] = usePostShopping();
+
   // const { shopping } = useShopping();
-  const [isModalOpen, toggleIsModalOpen] = useToggleState(false);
-  const [modalDate, setModalDate] = useState(null);
-  const [options, setOptions] = useLoadShoppingOptions(props.client);
 
-  const [breakfasts, setBreakfasts] = useState({});
-  const handleBreakfast = breakfast => {
-    setBreakfasts(breakfasts => ({
-      ...breakfasts,
-      [modalDate]: breakfast
-    }));
+  const handleModalSubmit = () => {
+    updateCalendar(modalState.date, calendarTitleFromMenu(modalState.menu));
+    const menuPayload = { date: modalState.date, menu: modalState.menu };
+    menuDispatch({ type: MENU_UPDATE, payload: menuPayload });
+    modalDispatch({ type: MODAL_CLOSE });
   };
 
-  const [lunchs, setLunchs] = useState({});
-  const handleLunch = lunch => {
-    setLunchs(lunchs => ({
-      ...lunchs,
-      [modalDate]: lunch
-    }));
-  };
-
-  const [dinners, setDinners] = useState({});
-  const handleDinner = dinner => {
-    setDinners(dinners => ({
-      ...dinners,
-      [modalDate]: dinner
-    }));
-  };
-
-  const loadDialog = dateEvent => {
-    setModalDate(dateEvent.date);
-    toggleIsModalOpen();
-  };
-
-  const saveModalAndClose = () => {
-    const calendarApi = calendarRef.current && calendarRef.current.getApi();
-    if (calendarApi) {
-      const breakfastCount = breakfasts[modalDate]
-        ? breakfasts[modalDate].length
-        : 0;
-      const lunchCount = lunchs[modalDate] ? lunchs[modalDate].length : 0;
-      const dinnerCount = dinners[modalDate] ? dinners[modalDate].length : 0;
-      toggleIsModalOpen();
-      const oldEvent = calendarApi.getEventById(modalDate);
-      if (oldEvent) {
-        oldEvent.remove();
+  const handleBreakfast = breakfast =>
+    modalDispatch({
+      type: MODAL_UPDATE,
+      payload: {
+        menuType: "breakfast",
+        menu: breakfast
       }
-      calendarApi.addEvent({
-        id: modalDate,
-        start: modalDate,
-        allDay: true,
-        title: `${breakfastCount} ${lunchCount} ${dinnerCount}`
-      });
-    }
+    });
+  const breakfastProps = autocompleteProps(
+    options,
+    setClientOptions,
+    modalState.menu && modalState.menu.breakfast,
+    handleBreakfast
+  );
+
+  const handleLunch = lunch =>
+    modalDispatch({
+      type: MODAL_UPDATE,
+      payload: {
+        menuType: "lunch",
+        menu: lunch
+      }
+    });
+  const lunchProps = autocompleteProps(
+    options,
+    setClientOptions,
+    modalState.menu && modalState.menu.lunch,
+    handleLunch
+  );
+
+  const handleDinner = dinner =>
+    modalDispatch({
+      type: MODAL_UPDATE,
+      payload: {
+        menuType: "dinner",
+        menu: dinner
+      }
+    });
+  const dinnerProps = autocompleteProps(
+    options,
+    setClientOptions,
+    modalState.menu && modalState.menu.dinner,
+    handleDinner
+  );
+
+  const handleModalToggle = event => {
+    modalDispatch({ type: MODAL_CLOSE });
+  };
+
+  const handleMenuSubmit = event => {
+    Object.keys(menuState).forEach(date => {
+      updateCalendar(date);
+    });
+    postShopping(menuState);
+    menuDispatch({ type: MENU_RESET });
   };
 
   return (
@@ -88,93 +140,90 @@ const Shopping = props => {
         plugins={plugins}
         locale={itLocale}
         contentHeight="auto"
-        dateClick={loadDialog}
+        dateClick={dateEvent =>
+          modalDispatch({
+            type: MODAL_OPEN,
+            payload: { date: dateEvent.date, menu: menuState[dateEvent.date] }
+          })
+        }
+        eventClick={eventEvent =>
+          modalDispatch({
+            type: MODAL_OPEN,
+            payload: {
+              date: eventEvent.event.start,
+              menu: menuState[eventEvent.event.start]
+            }
+          })
+        }
         events={[]}
       />
-      <Row>
-        <Col xs="12">
-          <h3>Colazione</h3>
-          {Object.entries(breakfasts).map(([date, values]) => (
-            <p>
-              {formatDate(date)}: {values.map(value => value.label).join(", ")}
-            </p>
-          ))}
-        </Col>
-        <Col xs="12">
-          <h3>Pranzo</h3>
-          {Object.entries(lunchs).map(([date, values]) => (
-            <p>
-              {formatDate(date)}: {values.map(value => value.label).join(", ")}
-            </p>
-          ))}
-        </Col>
-        <Col xs="12">
-          <h3>Cena</h3>
-          {Object.entries(dinners).map(([date, values]) => (
-            <p>
-              {formatDate(date)}: {values.map(value => value.label).join(", ")}
-            </p>
-          ))}
-        </Col>
-      </Row>
-      <ShoppingModal
-        key={modalDate}
-        isOpen={isModalOpen}
-        toggle={saveModalAndClose}
-        title={formatDate(modalDate)}
-        options={options}
-        setOptions={setOptions}
-        breakfast={breakfasts[modalDate]}
-        setBreakfast={handleBreakfast}
-        lunch={lunchs[modalDate]}
-        setLunch={handleLunch}
-        dinner={dinners[modalDate]}
-        setDinner={handleDinner}
-      />
+
+      <Button
+        color="primary"
+        disabled={isPostingShopping}
+        onClick={isPostingShopping ? undefined : handleMenuSubmit}
+      >
+        {isPostingShopping ? "INVIANDO..." : "INVIA!"}
+      </Button>
+
+      <h3>Menu</h3>
+      <p>TODO: sort</p>
+      {Object.entries(menuState).map(([date, { breakfast, lunch, dinner }]) => (
+        <div key={date}>
+          <h4>{formatDate(date)}</h4>
+          <p className="mb-0">
+            Colazione: {breakfast.map(value => value.label).join(", ")}
+          </p>
+          <p className="mb-0">
+            Pranzo: {lunch.map(value => value.label).join(", ")}
+          </p>
+          <p className="mb-0">
+            Cena: {dinner.map(value => value.label).join(", ")}
+          </p>
+        </div>
+      ))}
+
+      <h3>Lista</h3>
+      <p>TODO</p>
+
+      <GenericModal
+        key={modalState.date}
+        isOpen={modalState.isOpen}
+        toggle={handleModalToggle}
+        onSubmit={handleModalSubmit}
+        title={formatDate(modalState.date)}
+      >
+        <FormGroup>
+          <Label for="colazione">Colazione</Label>
+          <Autocomplete name="colazione" {...breakfastProps} />
+        </FormGroup>
+        <FormGroup>
+          <Label for="pranzo">Pranzo</Label>
+          <Autocomplete name="pranzo" {...lunchProps} />
+        </FormGroup>
+        <FormGroup>
+          <Label for="cena">Cena</Label>
+          <Autocomplete name="cena" {...dinnerProps} />
+        </FormGroup>
+      </GenericModal>
     </Container>
   );
 };
 
-const ShoppingModal = ({
-  options,
-  setOptions,
-  breakfast,
-  setBreakfast,
-  lunch,
-  setLunch,
-  dinner,
-  setDinner,
-  ...modalProps
-}) => {
-  const breakfastProps = useAutocomplete(
+const autocompleteProps = (options, setClientOptions, value, setValue) => {
+  const handleCreate = label => {
+    const newValue = { value: label, label };
+    setClientOptions([...options, newValue]);
+    setValue([...value, newValue]);
+  };
+
+  return {
+    onChange: setValue,
+    onCreateOption: handleCreate,
     options,
-    setOptions,
-    breakfast,
-    setBreakfast
-  );
-  const lunchProps = useAutocomplete(options, setOptions, lunch, setLunch);
-  const dinnerProps = useAutocomplete(options, setOptions, dinner, setDinner);
-  return (
-    <GenericModal {...modalProps}>
-      <FormGroup>
-        <Label for="colazione">Colazione</Label>
-        <Autocomplete name="colazione" {...breakfastProps} />
-      </FormGroup>
-      <FormGroup>
-        <Label for="pranzo">Pranzo</Label>
-        <Autocomplete name="pranzo" {...lunchProps} />
-      </FormGroup>
-      <FormGroup>
-        <Label for="cena">Cena</Label>
-        <Autocomplete name="cena" {...dinnerProps} />
-      </FormGroup>
-    </GenericModal>
-  );
+    value,
+    isLoading: options == null
+  };
 };
 
-const ShoppingWithApolloClient = props => (
-  <ApolloConsumer>
-    {client => <Shopping client={client} {...props} />}
-  </ApolloConsumer>
-);
-export default ShoppingWithApolloClient;
+export default Shopping;

@@ -10,17 +10,17 @@
 #
 
 class Good < ApplicationRecord
-  has_many :ingredients, dependent: :nullify
-  has_many :recipes, through: :ingredients
+  has_many :menu_goods, dependent: :destroy
+  has_many :menus, through: :menu_goods
 
   def serialized_json(options = {})
-    options.reverse_merge!(is_collection: false, include: %i[ingredients recipes])
+    options.reverse_merge!(is_collection: false)
     good = self.class.where(id: id).includes(options[:include]).first
     GoodSerializer.new(good, options).serialized_json
   end
 
   def self.serialized_json(options = {})
-    options.reverse_merge!(is_collection: true, include: %i[ingredients recipes])
+    options.reverse_merge!(is_collection: true)
     goods = current_scope.includes(options[:include])
     GoodSerializer.new(goods, options).serialized_json
   end
